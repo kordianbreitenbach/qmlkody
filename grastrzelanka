@@ -1,0 +1,81 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+
+ApplicationWindow {
+    visible: true
+    width: 640
+    height: 480
+    title: "Catch the Square Game"
+
+    property int score: 0
+
+    Rectangle {
+        id: gameArea
+        anchors.fill: parent
+
+        Timer {
+            id: spawnTimer
+            interval: 1000
+            running: true
+            repeat: true
+            onTriggered:         function spawnSquare() {
+                var square = Qt.createQmlObject(
+                    '  import QtQuick 2.15
+                      import QtQuick.Controls 2.15
+                        Rectangle {
+                        id: square
+                        width: 50;
+                        height: 50;
+                        color: "red";
+                        radius: 10;
+                        property real rotationSpeed: Math.random() * 10;
+                        x: Math.random() * (gameArea.width - width);
+                        y: Math.random() * (gameArea.height - height);
+
+                        RotationAnimation on rotation {
+                            id: rotationAnimation
+                            target: square
+                            property: "rotation"
+                            from: 0
+                            to: 360
+                            duration: 1000
+                            loops: Animation.Infinite
+                        }
+                                 NumberAnimation on x { to: Math.random() * (gameArea.width - width); duration: 2000 }
+                        NumberAnimation on y { to: Math.random() * (gameArea.height - height); duration: 2000 }
+                        MouseArea {
+                            anchors.fill: parent;
+                            onClicked: {
+                                square.destroy();
+                                score += 1;
+                            }
+                        }
+ NumberAnimation on opacity {
+        to: 0
+        duration: 2000
+
+        onRunningChanged: {
+            if (!running) {
+                console.log("Destroying...")
+                square.destroy();
+            }
+        }
+    }
+                    }', gameArea);
+
+
+
+
+            }
+        }
+
+
+    }
+
+    Text {
+        text: "Score: " + score
+        anchors.top: parent.top
+        anchors.right: parent.right
+        font.pixelSize: 24
+    }
+}
