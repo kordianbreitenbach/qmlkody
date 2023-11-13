@@ -6,27 +6,46 @@ ApplicationWindow {
     width: 640
     height: 480
     title: "Catch the Square Game"
-
+   property int scor: 0
     property int score: 0
-
+   property var rectangles: []
+       property bool functionEnabled: true
     Rectangle {
         id: gameArea
         anchors.fill: parent
+        Item {
+            anchors.fill: parent
+            focus: true
+            Keys.onPressed: (event)=> {
+                if (event.key === Qt.Key_P) {
+                    console.log("move left");
 
+                     functionEnabled = !functionEnabled;
+
+                    event.accepted = true;
+                }
+            }
+        }
         Timer {
             id: spawnTimer
             interval: 1000
-            running: true
+            running:functionEnabled
             repeat: true
+
             onTriggered:         function spawnSquare() {
                 var square = Qt.createQmlObject(
                     '  import QtQuick 2.15
                       import QtQuick.Controls 2.15
+
                         Rectangle {
                         id: square
-                        width: 50;
-                        height: 50;
-                        color: "red";
+                        width: Math.floor(Math.random() * (100 - 50 + 1)) + 50;
+                        height: Math.floor(Math.random() * (100 - 50 + 1)) + 50;
+color: [
+            "red",      // 0: Red
+            "green",    // 1: Green
+            "blue"      // 2: Blue
+        ][ Math.floor(Math.random() * 3)];
                         radius: 10;
                         property real rotationSpeed: Math.random() * 10;
                         x: Math.random() * (gameArea.width - width);
@@ -46,8 +65,18 @@ ApplicationWindow {
                         MouseArea {
                             anchors.fill: parent;
                             onClicked: {
+ function myFunction() {
+if ((width + height) >= 100 && (width + height) < 150) {
+
+                   scor=1;
+                }
+else  {
+
+                   scor=5;
+                }
+                }  myFunction();
                                 square.destroy();
-                                score += 1;
+                                score += scor;
                             }
                         }
  NumberAnimation on opacity {
@@ -58,10 +87,11 @@ ApplicationWindow {
             if (!running) {
                 console.log("Destroying...")
                 square.destroy();
+
             }
         }
     }
-                    }', gameArea);
+                      }', gameArea);
 
 
 
