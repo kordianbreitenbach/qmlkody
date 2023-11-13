@@ -68,11 +68,11 @@ color: [
  function myFunction() {
 if ((width + height) >= 100 && (width + height) < 150) {
 
-                   scor=1;
+                   scor=5;
                 }
 else  {
 
-                   scor=5;
+                   scor=1;
                 }
                 }  myFunction();
                                 square.destroy();
