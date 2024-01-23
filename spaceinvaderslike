@@ -1,12 +1,15 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
+import QtQtmlCountra
 
 ApplicationWindow {
     visible: true
     width: 800
     height: 600
     title: "2D Shooting Game"
+    //segment zmiennych
+     property real spawnInterval:2000
     property bool isMoving: false
     property bool gameStarted: false
     property bool shoot:false
@@ -14,18 +17,33 @@ ApplicationWindow {
     property bool righty: false
     property string moveDirection: ""  // "left" or "right"
     property real yPosition: 100   // Set an initial yPosition in the air
-    property real score: 0
-    property real lives: 3
+
     property real yVelocity: 0
     property real gravity: 0.5
     property real jumpVelocity: -10  // Negative velocity for upward movement
     property real movementSpeed: 10  // Pixels per second
     property real moveDuration: 200  // Milliseconds for fluid movement
    property bool functionEnabled: true
+    property int max:0
+    property int min:1
+    property real score: max
+    property real lives: min
+    //fragment ściągający zmienne z kodu c++
+    Backend {
+     id:myBackend
+        onNumberEmitted:(num,numb)=>{
+                        max=num
+                        min=numb
+                        }
+    }
+//segment zmiennych
+
+
     Rectangle {
          id: gameArea
         width: parent.width
         height: parent.height
+        //text pokazujący wynik
         Text {
               id: scoreDisplay
               text: "Score: " + score
@@ -34,6 +52,7 @@ ApplicationWindow {
               anchors.left: parent.left
               anchors.margins: 10  // Adjust the margin as needed
           }
+         //text pokazujący życia
         Text {
               id: livedisplay
               text: "lives: " + lives
@@ -42,14 +61,30 @@ ApplicationWindow {
               anchors.right: parent.right
               anchors.margins: 10  // Adjust the margin as needed
           }
+
+        //popup sygnalizujący koniec gry
         Popup {
             id: gameOver
             width: parent.width
             height: parent.height
             modal: true
             visible: lives <= 0
-
+            Item {
+                width: parent.width
+                height: parent.height
+                 //tablica stanów
+                states: [
+                       State {
+                           name: "state1"
+                           PropertyChanges { target: rectangle; color: "green" }
+                       },
+                       State {
+                           name: "state2"
+                           PropertyChanges { target: rectangle; color: "blue" }
+                       }
+                   ]
             Rectangle {
+                id:rectangle
                 width: parent.width
                 height: parent.height
                 color: "lightgray"
@@ -70,8 +105,15 @@ ApplicationWindow {
                         }
                     }
                 }
+
+            }
+            Button {
+                text: "change color of menu"
+                 onClicked: {parent.state = parent.state === "state1" ? "state2" : "state1"}
+            }
             }
           }
+        //popup będący menu gry
         Popup {
               id: gameLauncherPopup
               width: parent.width
@@ -79,7 +121,17 @@ ApplicationWindow {
               modal: true
               visible: true
 
+
+
+
+                  ListModel {
+                      id: difficultyModel
+                      ListElement { label: "Hard"; interval:200 }
+                      ListElement { label: "Easy"; interval: 2000 }
+                      // Można dodać więcej poziomów trudności tutaj
+                  }
               Rectangle {
+                  id: rectangl
                   width: parent.width
                   height: parent.height
                   color: "lightgray"
@@ -87,15 +139,18 @@ ApplicationWindow {
                   Column {
                       anchors.centerIn: parent
                       spacing: 10
-
                       Button {
-                          text: "Start Game"
-                          onClicked: {
-                              gameLauncherPopup.visible = false;
-                              gameStarted=true;
-                              // Dodaj tutaj kod do uruchomienia gry lub innych funkcji
-                          }
-                      }
+                                               text: "Start Game"
+                                               onClicked: {
+
+                                                   myBackend.generateNumber(1,2)
+                                                   gameLauncherPopup.visible = false;
+                                                   gameStarted=true;
+                                                   // Dodaj tutaj kod do uruchomienia gry lub innych funkcji
+                                               }
+                                           }
+
+
 
                       Button {
                           text: "Exit"
@@ -103,11 +158,32 @@ ApplicationWindow {
                               Qt.quit();
                           }
                       }
-                  }
+                      ListView {
+                          width: parent.width
+                           height: 100
+                          model: difficultyModel  // Tutaj następuje połączenie ListView z ListModel
+                          delegate: Button {
+                              text: model.label
+                              onClicked: {
+                                  myBackend.generateNumber(1,2)
+                                  spawnInterval = model.interval
+                                  gameLauncherPopup.visible = false
+                                  gameStarted = true
+                                  // Dodaj tutaj kod do uruchomienia gry lub innych funkcji
+                              }
+                          }
+                      }
+
+
               }
+
+
+
+
+        }
           }
 
-
+     //objekt gracza
         Rectangle {
             id: gameElement
             width: 50
@@ -184,7 +260,7 @@ ApplicationWindow {
                 gameElement.y = yPosition;
             }
         }
-
+    //element  podłogi
         Rectangle {
             id: floor
             width: parent.width
@@ -193,9 +269,10 @@ ApplicationWindow {
             anchors.bottom: parent.bottom
         }
     }
+    // funkcja spawnująca przeciwników i nadająca im ruch
 Item {   Timer {
     id: enemySpawnTimer
-    interval: 2000  // Adjust the spawn interval as needed
+    interval: spawnInterval // Adjust the spawn interval as needed
     running: true
     repeat: true
 
@@ -238,7 +315,7 @@ NumberAnimation on opacity {
         repeat: true
 
         onTriggered:
-
+          //funkcja spawnująca pociski
             function spawnProjectile() {
                 if (shoot) {
                     var projectileX = gameElement.x + (gameElement.width - 10) / 2; // 10 to szerokość pocisku
@@ -300,7 +377,7 @@ NumberAnimation on opacity {
         interval: 50 // Check for collisions frequently
         running: true
         repeat: true
-
+            //loopy łądujące wszyskie obecne pociski i przeciwników
         onTriggered:     function checkCollisions() {
             function findProjectiles() {
                 var foundProjectiles = [];
@@ -325,7 +402,7 @@ NumberAnimation on opacity {
             var projectiles = findProjectiles();
             var enemies =  findEnemies();
             for (var k = 0; k < enemies.length; k++) {
-
+                 //sprawdzamy czy pocisk dotknął ziemie
                   if (enemies[k].y + enemies[k].height >= gameArea.height) {
                       enemies[k].destroy();
                       lives-=1;
@@ -337,7 +414,7 @@ NumberAnimation on opacity {
                         projectiles[i].x + projectiles[i].width > enemies[j].x &&
                         projectiles[i].y < enemies[j].y + enemies[j].height &&
                         projectiles[i].y + projectiles[i].height > enemies[j].y) {
-                        // Collision detected
+                        // funkcja sprawdzająca czy pocisk zerzył się z przeciwnikiem
                         projectiles[i].destroy();
                         enemies[j].destroy();
                         score+=1;
@@ -358,7 +435,7 @@ NumberAnimation on opacity {
 
 
 
-
+                //funkcje sprawdzające czy wcisneliśmy klawisze ruchu A D i spacja
            Keys.onPressed: {
                if (event.key === Qt.Key_A || event.key === Qt.Key_D) {
                    event.accepted = true;  // Accept the event to prevent forwarding
@@ -382,7 +459,7 @@ NumberAnimation on opacity {
                         console.log("u started pressing z");
                    }
            }
-
+            //funkcja sprawdzająca czy strzelamy za pomocą przycisku z
            Keys.onReleased: {
                if (event.key === Qt.Key_A || event.key === Qt.Key_D||event.key === Qt.Key_Z) {
                    event.accepted = true;  // Accept the event to prevent forwarding
